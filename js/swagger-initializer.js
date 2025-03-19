@@ -24,13 +24,13 @@ window.onload = function () {
                     { className: "topbar-wrapper" },
                     ui.React.createElement('a', {
                       // SET the URL of the link for the image in the left top corner when the user clicks it
-                      href: "/admin",
+                      href: "https://epiphan.com",
                       rel: "noopener noreferrer",
                       className: "link"
                     }, ui.React.createElement('img', {
                       height: "80",
                       // SET the URL of the image in the left top corner
-                      src: "/images/product.png",
+                      src: "./images/epiphan-logo-dark.svg",
                       alt: "Pearl"
                     }),
                       ui.React.createElement(
