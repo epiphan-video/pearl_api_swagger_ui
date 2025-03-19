@@ -1,7 +1,7 @@
 window.onload = function () {
   window.ui = SwaggerUIBundle({
     // SET the URL to the file openapi.yml
-    url: window.location.protocol + "//" + window.location + '/' + window.location.pathname + "/api/v2.0/openapi.yml",
+    url: window.location + "/api/v2.0/openapi.yml",
     dom_id: '#swagger-ui',
     deepLinking: true,
     docExpansion: "none",
