@@ -3185,6 +3185,21 @@ paths:
                   bandwidth: 91318568
                   bitrate_limit: 1000000000
                   duration: 10
+        '400':
+          description: 'Invalid request parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                'Invalid protocol parameter':
+                  value:
+                    status: badrequest
+                    message: 'Invalid protocol parameter'
+                'Invalid mode parameter':
+                  value:
+                    status: badrequest
+                    message: 'Invalid mode parameter'
         '404':
           $ref: '#/components/responses/404'
   /system/connectivity/details:
@@ -3889,7 +3904,6 @@ components:
       required:
         - state
         - protocol
-        - queue
       type: object
       properties:
         state:
@@ -3910,6 +3924,9 @@ components:
             - s3
             - webdav
             - usbcopy
+            - kaltura
+            - panopto
+            - opencast
           type: string
         queue:
           $ref: '#/components/schemas/AfuQueue'
@@ -4484,7 +4501,7 @@ components:
         framerate:
           maximum: 99
           minimum: 1
-          type: integer
+          type: number
         bitrate:
           maximum: 50000
           minimum: 1
@@ -5243,6 +5260,119 @@ components:
         title: 'Example ad-hoc event'
         start: 60
         duration: 3600
+    EventStreamSettings:
+      type: object
+      properties:
+        audio:
+          type: object
+          properties:
+            bitrate:
+              type: integer
+              description: 'Audio bitrate in kbps'
+        video:
+          type: object
+          properties:
+            resolution:
+              pattern: ^\d+x\d+$|^$
+              type: string
+              description: 'Video resolution (e.g. 1920x1080)'
+              default: 1920x1080
+            framerate:
+              maximum: 99
+              minimum: 1
+              type: number
+              description: 'Video frame rate (frames per second)'
+              default: 30
+            bitrate:
+              oneOf:
+                -
+                  maximum: 50000
+                  minimum: 1
+                  type: integer
+                  description: 'Bitrate value in kbit/s'
+                -
+                  enum:
+                    - auto
+                  type: string
+                  description: 'Automatic bitrate selection'
+              description: 'Bitrate in kbit/s, or ''auto'' for automatic bitrate selection'
+              default: auto
+              example: '5000'
+    EventStreamBase:
+      required:
+        - id
+        - type
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ChannelId'
+        settings:
+          $ref: '#/components/schemas/EventStreamSettings'
+        type:
+          type: string
+          description: 'Event stream type'
+    EventExistingStream:
+      required:
+        - stream_id
+      type: object
+      allOf:
+        -
+          $ref: '#/components/schemas/EventStreamBase'
+      properties:
+        stream_id:
+          $ref: '#/components/schemas/PublisherId'
+        type:
+          enum:
+            - existing
+          type: string
+    EventNewStream:
+      required:
+        - stream
+      type: object
+      allOf:
+        -
+          $ref: '#/components/schemas/EventStreamBase'
+      properties:
+        name:
+          type: string
+        primary:
+          type: boolean
+        stream:
+          required:
+            - app
+            - type
+            - url
+          type: object
+          properties:
+            app:
+              type: string
+            type:
+              enum:
+                - rtmp
+              type: string
+            url:
+              type: string
+            username:
+              type: string
+            password:
+              type: string
+        type:
+          enum:
+            - new
+          type: string
+    EventStream:
+      type: object
+      oneOf:
+        -
+          $ref: '#/components/schemas/EventExistingStream'
+        -
+          $ref: '#/components/schemas/EventNewStream'
+      discriminator:
+        propertyName: type
+        mapping:
+          existing: '#/components/schemas/EventExistingStream'
+          new: '#/components/schemas/EventNewStream'
+      properties: {  }
     Event:
       required:
         - id
@@ -5278,21 +5408,7 @@ components:
         streams:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              stream:
-                type: object
-                properties:
-                  app:
-                    type: string
-                  type:
-                    type: string
-                  url:
-                    type: string
+            $ref: '#/components/schemas/EventStream'
         tags:
           type: string
       description: 'Basic event information'
@@ -5673,6 +5789,9 @@ components:
     StorageTransferState:
       enum:
         - completed
+        - disabled
+        - nomedia
+        - running
       type: string
     StorageTransferStatus:
       required:
@@ -5839,6 +5958,15 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    badRequest:
+      description: 'Invalid parameters'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: badrequest
+            message: 'Detailed error descrition'
     singleTouchControlNotFound:
       description: 'Single touch control object not found.'
       content:
