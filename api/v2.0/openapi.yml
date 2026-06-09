@@ -1,7 +1,7 @@
 openapi: 3.0.0
 info:
   title: 'Pearl device REST API'
-  description: "**REST API** commands use **GET**, **PUT**, **PATCH** and **POST** commands. **GET** commands are used to receive information from Pearl - such as notifying the status or reading off a value. The **PUT** command is used for executing a change on Pearl itself. **PATCH** commands are used when partially changing or updating fields within a section of the user interface. **POST** commands are used when adding or changing a child resource. Lastly, the **REST API** also includes **DELETE** commands.\n\nThe **API** endpoint for all calls below is: **\\<device IP\\>/api/v2.0**\n\nAll **API** calls will require basic authentication with the admin user account. **POST**, **PUT** and **PATCH** expects data as **JSON** with the header: **content-type** is **application/json**.\nIn most cases, the REST API response is a JSON object, but some methods return an image and binary data as well. In case of **JSON**, the response always includes a top level attribute status, which can be:\n* **ok** - successful. Result (if any) is returned as an attribute result\n* **error** - an error occurred. An optional attribute message provides more information about a problem\n* **busy** - resource is busy and operation cannot be performed right away, try again later"
+  description: 'Epiphan Pearl devices REST API'
   contact:
     name: 'Epiphan Video'
     url: 'https://www.epiphan.com/support/'
@@ -4036,77 +4036,96 @@ components:
               description: 'Whether Single Touch is enabled for the publisher'
               default: true
     RtspPublisherSettings:
-      required:
-        - rtsp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        rtsp:
           required:
-            - url
+            - rtsp
           type: object
           properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            url:
-              maxLength: 500
-              type: string
-              default: ''
-            transport:
-              enum:
-                - tcp
-                - udp
-              type: string
-              default: udp
-            username:
-              maxLength: 250
-              type: string
-              default: ''
-            password:
-              maxLength: 250
-              type: string
-              format: password
-              default: ''
+            rtsp:
+              required:
+                - url
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                url:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                transport:
+                  enum:
+                    - tcp
+                    - udp
+                  type: string
+                  default: udp
+                username:
+                  maxLength: 250
+                  type: string
+                  default: ''
+                password:
+                  maxLength: 250
+                  type: string
+                  format: password
+                  default: ''
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     RtmpPublisherSettings:
-      required:
-        - rtmp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        rtmp:
           required:
-            - url
+            - rtmp
           type: object
           properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            url:
-              maxLength: 500
-              type: string
-              default: ''
-            stream:
-              maxLength: 500
-              type: string
-              default: ''
-            username:
-              maxLength: 250
-              type: string
-              default: ''
-            password:
-              maxLength: 250
-              type: string
-              format: password
-              default: ''
-            auto_created:
-              type: boolean
+            rtmp:
+              required:
+                - url
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                  x-pearl-settings-storage:
+                    cfgdb_name: DISABLE_AUDIO
+                url:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: RTMP_URL
+                stream:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: RTMP_STREAM
+                username:
+                  maxLength: 250
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: RTMP_USERNAME
+                password:
+                  maxLength: 250
+                  type: string
+                  format: password
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: RTMP_PASSWORD
+                auto_created:
+                  type: boolean
+              x-pearl-settings-storage:
+                class_name: RtmpPublisherSettingsDetails
+                namespace: system\Grid\Publishers\Settings\Storage
+          x-pearl-settings-storage:
+            class_name: RtmpPublisherSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     UdpPublisherCommonSettings:
       type: object
       properties:
@@ -4115,169 +4134,253 @@ components:
           pattern: '^[0-9.]*$'
           type: string
           default: ''
+          x-pearl-settings-storage:
+            cfgdb_name: UNICAST_ADDRESS
         sap:
           type: boolean
           description: 'Whether to enable SAP announcement'
           default: false
+          x-pearl-settings-storage:
+            cfgdb_name: SAP
         sap_ip:
           maxLength: 500
           pattern: '^[0-9.]*$'
           type: string
           default: ''
+          x-pearl-settings-storage:
+            cfgdb_name: SAP_IP
         sap_channel:
           type: integer
           default: 0
+          x-pearl-settings-storage:
+            cfgdb_name: SAP_CHANNEL_NO
         sap_play_group:
           maxLength: 50
           type: string
           default: ''
+          x-pearl-settings-storage:
+            cfgdb_name: SAP_PLAY_GROUP
         limit_bandwidth:
           type: boolean
           description: 'Whether to limit bandwidth rate'
           default: false
+          x-pearl-settings-storage:
+            cfgdb_name: LIMIT_BANDWIDTH
         limit_bandwidth_rate:
           minimum: 0
           type: integer
           description: 'Bandwidth rate limit in kbits'
           default: 0
+          x-pearl-settings-storage:
+            cfgdb_name: MULTICAST_RATE_LIMIT
     RtpUdpPublisherSettings:
-      required:
-        - rtp_udp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        rtp_udp:
           required:
-            - audio_port
-            - video_port
+            - rtp_udp
           type: object
-          allOf:
-            -
-              $ref: '#/components/schemas/UdpPublisherCommonSettings'
           properties:
-            audio_port:
-              maximum: 65535
-              minimum: 1
-              type: integer
-              default: 6000
-            video_port:
-              maximum: 65535
-              minimum: 1
-              type: integer
-              default: 6002
+            rtp_udp:
+              required:
+                - audio_port
+                - video_port
+              type: object
+              allOf:
+                -
+                  $ref: '#/components/schemas/UdpPublisherCommonSettings'
+              properties:
+                audio_port:
+                  maximum: 65535
+                  minimum: 1
+                  type: integer
+                  default: 6000
+                  x-pearl-settings-storage:
+                    cfgdb_name: UNICAST_APORT
+                video_port:
+                  maximum: 65535
+                  minimum: 1
+                  type: integer
+                  default: 6002
+                  x-pearl-settings-storage:
+                    cfgdb_name: UNICAST_VPORT
+              x-pearl-settings-storage:
+                class_name: RtpUdpPublisherSettingsDetails
+                namespace: system\Grid\Publishers\Settings\Storage
+          x-pearl-settings-storage:
+            class_name: RtpUdpPublisherSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     MpegTsPublisherCommonSettings:
-      type: object
       allOf:
+        -
+          type: object
+          properties:
+            port:
+              maximum: 65535
+              minimum: 1
+              type: integer
+              default: 6004
+              x-pearl-settings-storage:
+                cfgdb_name: UNICAST_MPORT
+          x-pearl-settings-storage:
+            class_name: MpegTsPublisherCommonSettings
+            namespace: system\Grid\Publishers\Settings\Storage
         -
           $ref: '#/components/schemas/UdpPublisherCommonSettings'
-      properties:
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-          default: 6004
     MpegTsUdpPublisherSettings:
-      required:
-        - mpegts_udp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        mpegts_udp:
-          $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
-    MpegTsRtpPublisherSettings:
-      required:
-        - mpegts_rtp
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        mpegts_rtp:
-          $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
-    NdiPublisherSettings:
-      required:
-        - ndi
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        ndi:
-          type: object
-          properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            ndi_name:
-              maxLength: 500
-              type: string
-              default: ''
-            ndi_group:
-              maxLength: 500
-              type: string
-              default: ''
-    HlsPublisherSettings:
-      required:
-        - hls
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        hls:
           required:
-            - segment_duration
+            - mpegts_udp
           type: object
           properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            url:
-              maxLength: 500
-              type: string
-              default: ''
-            master_pl_url:
-              maxLength: 500
-              type: string
-              description: 'Master playlist URL'
-              default: ''
-            username:
-              maxLength: 250
-              type: string
-              default: ''
-            password:
-              maxLength: 250
-              type: string
-              format: password
-              default: ''
-            segment_duration:
-              maximum: 8
-              minimum: 1
-              type: integer
-              default: 6
-            list_size:
-              minimum: 1
-              type: integer
-              default: 6
-            user_agent:
-              maxLength: 100
-              type: string
-              default: ''
-            http_method:
-              maxLength: 20
-              minLength: 1
-              type: string
-              default: POST
-            media_seg_tmpl:
-              maxLength: 1000
-              type: string
-              default: ''
+            mpegts_udp:
+              $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
+          x-pearl-settings-storage:
+            class_name: MpegTsUdpPublisherSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
+    MpegTsRtpPublisherSettings:
+      allOf:
+        -
+          required:
+            - mpegts_rtp
+          type: object
+          properties:
+            mpegts_rtp:
+              $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
+          x-pearl-settings-storage:
+            class_name: MpegTsRtpPublisherSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
+    NdiPublisherSettings:
+      allOf:
+        -
+          required:
+            - ndi
+          type: object
+          properties:
+            ndi:
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                  x-pearl-settings-storage:
+                    cfgdb_name: DISABLE_AUDIO
+                ndi_name:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: NDI_NAME
+                ndi_group:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: NDI_GROUP
+              x-pearl-settings-storage:
+                class_name: NdiPublisherSettingsDetails
+                namespace: system\Grid\Publishers\Settings\Storage
+          x-pearl-settings-storage:
+            class_name: NdiPublisherSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
+    HlsPublisherSettings:
+      allOf:
+        -
+          required:
+            - hls
+          type: object
+          properties:
+            hls:
+              required:
+                - segment_duration
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                  x-pearl-settings-storage:
+                    cfgdb_name: DISABLE_AUDIO
+                url:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_URL
+                master_pl_url:
+                  maxLength: 500
+                  type: string
+                  description: 'Master playlist URL'
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_MASTER_PL_URL
+                username:
+                  maxLength: 250
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_USERNAME
+                password:
+                  maxLength: 250
+                  type: string
+                  format: password
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_PASSWORD
+                segment_duration:
+                  maximum: 8
+                  minimum: 1
+                  type: integer
+                  default: 6
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_SEGMENT_DURATION
+                list_size:
+                  minimum: 1
+                  type: integer
+                  default: 6
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_LIST_SIZE
+                user_agent:
+                  maxLength: 100
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_USER_AGENT
+                http_method:
+                  maxLength: 20
+                  minLength: 1
+                  type: string
+                  default: POST
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_INGEST_METHOD
+                media_seg_tmpl:
+                  maxLength: 1000
+                  type: string
+                  default: ''
+                  x-pearl-settings-storage:
+                    cfgdb_name: HLS_MEDIA_SEG_TMPL
+              x-pearl-settings-storage:
+                class_name: HlsPublisherSettingsDetails
+                namespace: system\Grid\Publishers\Settings\Storage
+          x-pearl-settings-storage:
+            class_name: HlsPublisherSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     SrtPublisherCommonSettings:
       required:
         - mode
@@ -4287,6 +4390,8 @@ components:
           type: boolean
           description: 'Whether audio is disabled'
           default: false
+          x-pearl-settings-storage:
+            cfgdb_name: DISABLE_AUDIO
         mode:
           $ref: '#/components/schemas/SrtMode'
         latency:
@@ -4294,87 +4399,129 @@ components:
           minimum: 80
           type: integer
           default: 125
+          x-pearl-settings-storage:
+            cfgdb_name: SRT_LATENCY
         bw_recovery_overhead:
           maximum: 100
           minimum: 5
           type: integer
           default: 25
+          x-pearl-settings-storage:
+            cfgdb_name: BW_RECOVERY_OVERHEAD
         encryption:
           $ref: '#/components/schemas/SrtEncryptionSettings'
     SrtPublisherCallerSettings:
-      required:
-        - url
-      type: object
       allOf:
         -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 500
+              type: string
+              default: ''
+              x-pearl-settings-storage:
+                cfgdb_name: SRT_URL
+            stream_id:
+              maxLength: 512
+              type: string
+              default: ''
+              x-pearl-settings-storage:
+                cfgdb_name: STREAM_ID
+            source_port:
+              oneOf:
+                -
+                  enum:
+                    - 0
+                  type: integer
+                -
+                  maximum: 65535
+                  minimum: 1024
+                  type: integer
+              default: 0
+              x-pearl-settings-storage:
+                cfgdb_name: SOURCE_PORT
+          x-pearl-settings-storage:
+            class_name: SrtPublisherCallerSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\SrtPublisherHandler
+        -
           $ref: '#/components/schemas/SrtPublisherCommonSettings'
-      properties:
-        url:
-          maxLength: 500
-          type: string
-          default: ''
-        stream_id:
-          maxLength: 512
-          type: string
-          default: ''
-        source_port:
-          oneOf:
-            -
-              enum:
-                - 0
-              type: integer
-            -
+    SrtPublisherRendezvousSettings:
+      allOf:
+        -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 500
+              type: string
+              default: ''
+              x-pearl-settings-storage:
+                cfgdb_name: SRT_URL
+          x-pearl-settings-storage:
+            class_name: SrtPublisherRendezvousSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\SrtPublisherHandler
+        -
+          $ref: '#/components/schemas/SrtPublisherCommonSettings'
+    SrtPublisherListenerSettings:
+      allOf:
+        -
+          required:
+            - port
+          type: object
+          properties:
+            port:
               maximum: 65535
               minimum: 1024
               type: integer
-          default: 0
-    SrtPublisherRendezvousSettings:
-      required:
-        - url
-      type: object
-      allOf:
+              x-pearl-settings-storage:
+                description: 'SrtPublisherHandler processes this property (configdb key PORT)'
+          x-pearl-settings-storage:
+            class_name: SrtPublisherListenerSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\SrtPublisherHandler
         -
           $ref: '#/components/schemas/SrtPublisherCommonSettings'
-      properties:
-        url:
-          maxLength: 500
-          type: string
-          default: ''
-    SrtPublisherListenerSettings:
-      required:
-        - port
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/SrtPublisherCommonSettings'
-      properties:
-        port:
-          maximum: 65535
-          minimum: 1024
-          type: integer
     SrtPublisherSettings:
-      required:
-        - srt
-      type: object
       allOf:
+        -
+          required:
+            - srt
+          type: object
+          properties:
+            srt:
+              required:
+                - mode
+              oneOf:
+                -
+                  $ref: '#/components/schemas/SrtPublisherCallerSettings'
+                -
+                  $ref: '#/components/schemas/SrtPublisherListenerSettings'
+                -
+                  $ref: '#/components/schemas/SrtPublisherRendezvousSettings'
+              discriminator:
+                propertyName: mode
+                mapping:
+                  listener: '#/components/schemas/SrtPublisherListenerSettings'
+                  caller: '#/components/schemas/SrtPublisherCallerSettings'
+                  rendezvous: '#/components/schemas/SrtPublisherRendezvousSettings'
+              x-pearl-settings-storage:
+                discriminator:
+                  cfgdb_name: MODE
+                  default: caller
+          x-pearl-settings-storage:
+            class_name: SrtPublisherSettings
+            namespace: system\Grid\Publishers\Settings\Storage
+            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        srt:
-          oneOf:
-            -
-              $ref: '#/components/schemas/SrtPublisherCallerSettings'
-            -
-              $ref: '#/components/schemas/SrtPublisherListenerSettings'
-            -
-              $ref: '#/components/schemas/SrtPublisherRendezvousSettings'
-          discriminator:
-            propertyName: mode
-            mapping:
-              listener: '#/components/schemas/SrtPublisherListenerSettings'
-              caller: '#/components/schemas/SrtPublisherCallerSettings'
-              rendezvous: '#/components/schemas/SrtPublisherRendezvousSettings'
     PublisherSettings:
+      required:
+        - type
       type: object
       oneOf:
         -
@@ -4404,6 +4551,8 @@ components:
           ndi: '#/components/schemas/NdiPublisherSettings'
           hls: '#/components/schemas/HlsPublisherSettings'
           srt: '#/components/schemas/SrtPublisherSettings'
+      x-pearl-settings-storage:
+        discriminator_handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
       properties: {  }
     IdentifiedPublisherSettings:
       required:
@@ -4420,6 +4569,11 @@ components:
           type: string
         settings:
           $ref: '#/components/schemas/PublisherSettings'
+      x-pearl-settings-storage:
+        save_description: 'Change publisher settings'
+        class_name: SettingsStorage
+        namespace: system\Grid\Publishers\Settings\Storage
+        handler: system\Grid\Publishers\Settings\Storage\Handlers\IdentifiedPublisherHandler
     ChannelId:
       type: string
       description: 'Auto-assigned Channel ID'
@@ -4698,53 +4852,56 @@ components:
           description: 'UTC midnight-based timestamps'
           default: true
     SrtInputCallerSettings:
-      required:
-        - url
-      type: object
       allOf:
         -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 128
+              type: string
+            stream_id:
+              maxLength: 512
+              type: string
+            source_port:
+              oneOf:
+                -
+                  enum:
+                    - 0
+                  type: integer
+                -
+                  maximum: 65535
+                  minimum: 1024
+                  type: integer
+              default: 0
+        -
           $ref: '#/components/schemas/SrtInputCommonSettings'
-      properties:
-        url:
-          maxLength: 128
-          type: string
-        stream_id:
-          maxLength: 512
-          type: string
-        source_port:
-          oneOf:
-            -
-              enum:
-                - 0
-              type: integer
-            -
+    SrtInputRendezvousSettings:
+      allOf:
+        -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 128
+              type: string
+        -
+          $ref: '#/components/schemas/SrtInputCommonSettings'
+    SrtInputListenerSettings:
+      allOf:
+        -
+          required:
+            - port
+          type: object
+          properties:
+            port:
               maximum: 65535
               minimum: 1024
               type: integer
-          default: 0
-    SrtInputRendezvousSettings:
-      required:
-        - url
-      type: object
-      allOf:
         -
           $ref: '#/components/schemas/SrtInputCommonSettings'
-      properties:
-        url:
-          maxLength: 128
-          type: string
-    SrtInputListenerSettings:
-      required:
-        - port
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/SrtInputCommonSettings'
-      properties:
-        port:
-          maximum: 65535
-          minimum: 1024
-          type: integer
     RtspInputSettings:
       type: object
       properties:
@@ -4909,6 +5066,8 @@ components:
         sdi:
           $ref: '#/components/schemas/SdiInputSettings'
         srt:
+          required:
+            - mode
           oneOf:
             -
               $ref: '#/components/schemas/SrtInputCallerSettings'
@@ -4940,6 +5099,8 @@ components:
         video:
           $ref: '#/components/schemas/VideoInputSettings'
         srt:
+          required:
+            - mode
           oneOf:
             -
               $ref: '#/components/schemas/SrtInputCallerSettings'
@@ -5312,55 +5473,61 @@ components:
           type: string
           description: 'Event stream type'
     EventExistingStream:
-      required:
-        - stream_id
-      type: object
       allOf:
         -
           $ref: '#/components/schemas/EventStreamBase'
-      properties:
-        stream_id:
-          $ref: '#/components/schemas/PublisherId'
-        type:
-          enum:
-            - existing
-          type: string
-    EventNewStream:
-      required:
-        - stream
-      type: object
-      allOf:
         -
-          $ref: '#/components/schemas/EventStreamBase'
-      properties:
-        name:
-          type: string
-        primary:
-          type: boolean
-        stream:
           required:
-            - app
+            - stream_id
             - type
-            - url
           type: object
           properties:
-            app:
-              type: string
+            stream_id:
+              $ref: '#/components/schemas/PublisherId'
             type:
               enum:
-                - rtmp
+                - existing
               type: string
-            url:
+    EventNewStream:
+      allOf:
+        -
+          $ref: '#/components/schemas/EventStreamBase'
+        -
+          required:
+            - stream
+            - type
+          type: object
+          properties:
+            name:
               type: string
-            username:
+            primary:
+              type: boolean
+            stream:
+              required:
+                - app
+                - type
+                - url
+              type: object
+              properties:
+                app:
+                  type: string
+                type:
+                  enum:
+                    - rtmp
+                  type: string
+                url:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+            type:
+              enum:
+                - new
               type: string
-            password:
-              type: string
-        type:
-          enum:
-            - new
-          type: string
     EventStream:
+      required:
+        - type
       type: object
       oneOf:
         -
@@ -5431,174 +5598,6 @@ components:
               url: 'rtmp://0_yyyyyy.p.kpublish.kaltura.com:1935/kLive?t=zzzzzz'
         tags: test
         title: 'Example event'
-    EventDetails:
-      required:
-        - id
-        - status
-        - title
-        - start
-        - finish
-      type: object
-      properties:
-        description:
-          type: string
-        enabled:
-          type: boolean
-        ext_id:
-          type: string
-        extra_data:
-          type: object
-          properties:
-            capabilities:
-              type: array
-              items:
-                $ref: '#/components/schemas/CmsCapabilityDescriptor'
-              description: 'An array of CMS capability descriptors available for the event in its current status. Each item in the array represents a specific capability and its state.'
-              example:
-                -
-                  name: start
-                  state: Disabled
-                -
-                  name: stop
-                  state: Enabled
-                -
-                  name: pause
-                  state: Enabled
-                -
-                  name: resume
-                  state: Disabled
-                -
-                  name: extend
-                  state: Disabled
-            desc:
-              type: string
-              description: 'Additional information about the event.'
-        finish:
-          type: integer
-        id:
-          type: string
-        organizer:
-          type: string
-        recorders:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-        reminders:
-          type: array
-          items:
-            type: object
-            properties:
-              at:
-                type: integer
-              done:
-                type: boolean
-              reminder:
-                type: string
-        scheduled_finish:
-          type: integer
-        scheduled_start:
-          type: integer
-        start:
-          type: integer
-        status:
-          $ref: '#/components/schemas/EventStatus'
-        streams:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              stream:
-                type: object
-                properties:
-                  app:
-                    type: string
-                  type:
-                    type: string
-                  url:
-                    type: string
-        tags:
-          type: string
-        title:
-          type: string
-        confirmed:
-          type: boolean
-          description: 'When scheduled event confirmation is enabled, scheduled event will start only if this field is set to true'
-      description: 'Detailed event information'
-      example:
-        description: "Example event\r\nmultiline\r\ndescription"
-        enabled: true
-        ext_id: '3807702'
-        extra_data:
-          categories:
-            -
-              name: confirm
-              state: Disabled
-            -
-              name: start
-              state: Disabled
-          desc: 'kaltura, https://www.kaltura.com, 1_wnr61iwo'
-        finish: 1592571308
-        id: 782ec0f4bbcc48e2a42a44eea5e69dc5
-        organizer: name@company.com
-        recorders:
-          -
-            id: '1'
-        reminders:
-          -
-            at: 300
-            done: true
-            reminder: start
-          -
-            at: 300
-            done: false
-            reminder: finish
-        scheduled_finish: 1592573400
-        scheduled_start: 1592571600
-        start: 1592571304
-        status: finished
-        confirmed: true
-        streams:
-          -
-            id: '1'
-            name: 'Example event'
-            stream:
-              app: 0_xxxxxx_1
-              type: rtmp
-              url: 'rtmp://0_yyyyyy.p.kpublish.kaltura.com:1935/kLive?t=zzzzzzz'
-        tags: test
-        title: 'Example event'
-    CmsCapabilityDescriptor:
-      required:
-        - name
-        - state
-      type: object
-      properties:
-        name:
-          enum:
-            - start
-            - stop
-            - pause
-            - resume
-            - extend
-            - confirm
-          type: string
-          description: 'The name of the CMS capability.'
-          example: start
-        state:
-          enum:
-            - Enabled
-            - Disabled
-          type: string
-          description: 'The current state of the CMS capability.'
-          example: Enabled
-      description: 'Represents a CMS capability with a name and a state indicating whether it is enabled, disabled, or not supported.'
     SystemStatus:
       type: object
       properties:
@@ -5619,10 +5618,10 @@ components:
           type: boolean
           description: 'Indicator of high CPU load'
         cputemp:
-          type: integer
+          type: number
           description: 'CPU temperature in degrees Celsius'
         cputemp_threshold:
-          type: integer
+          type: number
           description: 'Threshold after which CPU temperature is considered as too high'
       description: 'Information about system''s hardware condition'
       example:
@@ -5966,7 +5965,16 @@ components:
             $ref: '#/components/schemas/ErrorResponse'
           example:
             status: badrequest
-            message: 'Detailed error descrition'
+            message: 'Detailed error description'
+    serviceUnavailable:
+      description: 'Service Unavailable'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: unavailable
+            message: 'Detailed error description'
     singleTouchControlNotFound:
       description: 'Single touch control object not found.'
       content:
