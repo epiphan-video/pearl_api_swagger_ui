@@ -3185,6 +3185,21 @@ paths:
                   bandwidth: 91318568
                   bitrate_limit: 1000000000
                   duration: 10
+        '400':
+          description: 'Invalid request parameters'
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                'Invalid protocol parameter':
+                  value:
+                    status: badrequest
+                    message: 'Invalid protocol parameter'
+                'Invalid mode parameter':
+                  value:
+                    status: badrequest
+                    message: 'Invalid mode parameter'
         '404':
           $ref: '#/components/responses/404'
   /system/connectivity/details:
@@ -3889,7 +3904,6 @@ components:
       required:
         - state
         - protocol
-        - queue
       type: object
       properties:
         state:
@@ -3910,6 +3924,9 @@ components:
             - s3
             - webdav
             - usbcopy
+            - kaltura
+            - panopto
+            - opencast
           type: string
         queue:
           $ref: '#/components/schemas/AfuQueue'
@@ -4019,77 +4036,79 @@ components:
               description: 'Whether Single Touch is enabled for the publisher'
               default: true
     RtspPublisherSettings:
-      required:
-        - rtsp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        rtsp:
           required:
-            - url
+            - rtsp
           type: object
           properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            url:
-              maxLength: 500
-              type: string
-              default: ''
-            transport:
-              enum:
-                - tcp
-                - udp
-              type: string
-              default: udp
-            username:
-              maxLength: 250
-              type: string
-              default: ''
-            password:
-              maxLength: 250
-              type: string
-              format: password
-              default: ''
+            rtsp:
+              required:
+                - url
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                url:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                transport:
+                  enum:
+                    - tcp
+                    - udp
+                  type: string
+                  default: udp
+                username:
+                  maxLength: 250
+                  type: string
+                  default: ''
+                password:
+                  maxLength: 250
+                  type: string
+                  format: password
+                  default: ''
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     RtmpPublisherSettings:
-      required:
-        - rtmp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        rtmp:
           required:
-            - url
+            - rtmp
           type: object
           properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            url:
-              maxLength: 500
-              type: string
-              default: ''
-            stream:
-              maxLength: 500
-              type: string
-              default: ''
-            username:
-              maxLength: 250
-              type: string
-              default: ''
-            password:
-              maxLength: 250
-              type: string
-              format: password
-              default: ''
-            auto_created:
-              type: boolean
+            rtmp:
+              required:
+                - url
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                url:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                stream:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                username:
+                  maxLength: 250
+                  type: string
+                  default: ''
+                password:
+                  maxLength: 250
+                  type: string
+                  format: password
+                  default: ''
+                auto_created:
+                  type: boolean
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     UdpPublisherCommonSettings:
       type: object
       properties:
@@ -4124,143 +4143,149 @@ components:
           description: 'Bandwidth rate limit in kbits'
           default: 0
     RtpUdpPublisherSettings:
-      required:
-        - rtp_udp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        rtp_udp:
           required:
-            - audio_port
-            - video_port
+            - rtp_udp
           type: object
-          allOf:
-            -
-              $ref: '#/components/schemas/UdpPublisherCommonSettings'
           properties:
-            audio_port:
-              maximum: 65535
-              minimum: 1
-              type: integer
-              default: 6000
-            video_port:
-              maximum: 65535
-              minimum: 1
-              type: integer
-              default: 6002
+            rtp_udp:
+              required:
+                - audio_port
+                - video_port
+              type: object
+              allOf:
+                -
+                  $ref: '#/components/schemas/UdpPublisherCommonSettings'
+              properties:
+                audio_port:
+                  maximum: 65535
+                  minimum: 1
+                  type: integer
+                  default: 6000
+                video_port:
+                  maximum: 65535
+                  minimum: 1
+                  type: integer
+                  default: 6002
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     MpegTsPublisherCommonSettings:
-      type: object
       allOf:
+        -
+          type: object
+          properties:
+            port:
+              maximum: 65535
+              minimum: 1
+              type: integer
+              default: 6004
         -
           $ref: '#/components/schemas/UdpPublisherCommonSettings'
-      properties:
-        port:
-          maximum: 65535
-          minimum: 1
-          type: integer
-          default: 6004
     MpegTsUdpPublisherSettings:
-      required:
-        - mpegts_udp
-      type: object
       allOf:
         -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        mpegts_udp:
-          $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
-    MpegTsRtpPublisherSettings:
-      required:
-        - mpegts_rtp
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        mpegts_rtp:
-          $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
-    NdiPublisherSettings:
-      required:
-        - ndi
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        ndi:
-          type: object
-          properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            ndi_name:
-              maxLength: 500
-              type: string
-              default: ''
-            ndi_group:
-              maxLength: 500
-              type: string
-              default: ''
-    HlsPublisherSettings:
-      required:
-        - hls
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        hls:
           required:
-            - segment_duration
+            - mpegts_udp
           type: object
           properties:
-            disable_audio:
-              type: boolean
-              description: 'Whether audio is disabled'
-              default: false
-            url:
-              maxLength: 500
-              type: string
-              default: ''
-            master_pl_url:
-              maxLength: 500
-              type: string
-              description: 'Master playlist URL'
-              default: ''
-            username:
-              maxLength: 250
-              type: string
-              default: ''
-            password:
-              maxLength: 250
-              type: string
-              format: password
-              default: ''
-            segment_duration:
-              maximum: 8
-              minimum: 1
-              type: integer
-              default: 6
-            list_size:
-              minimum: 1
-              type: integer
-              default: 6
-            user_agent:
-              maxLength: 100
-              type: string
-              default: ''
-            http_method:
-              maxLength: 20
-              minLength: 1
-              type: string
-              default: POST
-            media_seg_tmpl:
-              maxLength: 1000
-              type: string
-              default: ''
+            mpegts_udp:
+              $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
+    MpegTsRtpPublisherSettings:
+      allOf:
+        -
+          required:
+            - mpegts_rtp
+          type: object
+          properties:
+            mpegts_rtp:
+              $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
+    NdiPublisherSettings:
+      allOf:
+        -
+          required:
+            - ndi
+          type: object
+          properties:
+            ndi:
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                ndi_name:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                ndi_group:
+                  maxLength: 500
+                  type: string
+                  default: ''
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
+    HlsPublisherSettings:
+      allOf:
+        -
+          required:
+            - hls
+          type: object
+          properties:
+            hls:
+              required:
+                - segment_duration
+              type: object
+              properties:
+                disable_audio:
+                  type: boolean
+                  description: 'Whether audio is disabled'
+                  default: false
+                url:
+                  maxLength: 500
+                  type: string
+                  default: ''
+                master_pl_url:
+                  maxLength: 500
+                  type: string
+                  description: 'Master playlist URL'
+                  default: ''
+                username:
+                  maxLength: 250
+                  type: string
+                  default: ''
+                password:
+                  maxLength: 250
+                  type: string
+                  format: password
+                  default: ''
+                segment_duration:
+                  maximum: 8
+                  minimum: 1
+                  type: integer
+                  default: 6
+                list_size:
+                  minimum: 1
+                  type: integer
+                  default: 6
+                user_agent:
+                  maxLength: 100
+                  type: string
+                  default: ''
+                http_method:
+                  maxLength: 20
+                  minLength: 1
+                  type: string
+                  default: POST
+                media_seg_tmpl:
+                  maxLength: 1000
+                  type: string
+                  default: ''
+        -
+          $ref: '#/components/schemas/PublisherBaseSettings'
     SrtPublisherCommonSettings:
       required:
         - mode
@@ -4285,79 +4310,87 @@ components:
         encryption:
           $ref: '#/components/schemas/SrtEncryptionSettings'
     SrtPublisherCallerSettings:
-      required:
-        - url
-      type: object
       allOf:
         -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 500
+              type: string
+              default: ''
+            stream_id:
+              maxLength: 512
+              type: string
+              default: ''
+            source_port:
+              oneOf:
+                -
+                  enum:
+                    - 0
+                  type: integer
+                -
+                  maximum: 65535
+                  minimum: 1024
+                  type: integer
+              default: 0
+        -
           $ref: '#/components/schemas/SrtPublisherCommonSettings'
-      properties:
-        url:
-          maxLength: 500
-          type: string
-          default: ''
-        stream_id:
-          maxLength: 512
-          type: string
-          default: ''
-        source_port:
-          oneOf:
-            -
-              enum:
-                - 0
-              type: integer
-            -
+    SrtPublisherRendezvousSettings:
+      allOf:
+        -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 500
+              type: string
+              default: ''
+        -
+          $ref: '#/components/schemas/SrtPublisherCommonSettings'
+    SrtPublisherListenerSettings:
+      allOf:
+        -
+          required:
+            - port
+          type: object
+          properties:
+            port:
               maximum: 65535
               minimum: 1024
               type: integer
-          default: 0
-    SrtPublisherRendezvousSettings:
-      required:
-        - url
-      type: object
-      allOf:
         -
           $ref: '#/components/schemas/SrtPublisherCommonSettings'
-      properties:
-        url:
-          maxLength: 500
-          type: string
-          default: ''
-    SrtPublisherListenerSettings:
-      required:
-        - port
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/SrtPublisherCommonSettings'
-      properties:
-        port:
-          maximum: 65535
-          minimum: 1024
-          type: integer
     SrtPublisherSettings:
-      required:
-        - srt
-      type: object
       allOf:
+        -
+          required:
+            - srt
+          type: object
+          properties:
+            srt:
+              required:
+                - mode
+              oneOf:
+                -
+                  $ref: '#/components/schemas/SrtPublisherCallerSettings'
+                -
+                  $ref: '#/components/schemas/SrtPublisherListenerSettings'
+                -
+                  $ref: '#/components/schemas/SrtPublisherRendezvousSettings'
+              discriminator:
+                propertyName: mode
+                mapping:
+                  listener: '#/components/schemas/SrtPublisherListenerSettings'
+                  caller: '#/components/schemas/SrtPublisherCallerSettings'
+                  rendezvous: '#/components/schemas/SrtPublisherRendezvousSettings'
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
-      properties:
-        srt:
-          oneOf:
-            -
-              $ref: '#/components/schemas/SrtPublisherCallerSettings'
-            -
-              $ref: '#/components/schemas/SrtPublisherListenerSettings'
-            -
-              $ref: '#/components/schemas/SrtPublisherRendezvousSettings'
-          discriminator:
-            propertyName: mode
-            mapping:
-              listener: '#/components/schemas/SrtPublisherListenerSettings'
-              caller: '#/components/schemas/SrtPublisherCallerSettings'
-              rendezvous: '#/components/schemas/SrtPublisherRendezvousSettings'
     PublisherSettings:
+      required:
+        - type
       type: object
       oneOf:
         -
@@ -4484,7 +4517,7 @@ components:
         framerate:
           maximum: 99
           minimum: 1
-          type: integer
+          type: number
         bitrate:
           maximum: 50000
           minimum: 1
@@ -4681,53 +4714,56 @@ components:
           description: 'UTC midnight-based timestamps'
           default: true
     SrtInputCallerSettings:
-      required:
-        - url
-      type: object
       allOf:
         -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 128
+              type: string
+            stream_id:
+              maxLength: 512
+              type: string
+            source_port:
+              oneOf:
+                -
+                  enum:
+                    - 0
+                  type: integer
+                -
+                  maximum: 65535
+                  minimum: 1024
+                  type: integer
+              default: 0
+        -
           $ref: '#/components/schemas/SrtInputCommonSettings'
-      properties:
-        url:
-          maxLength: 128
-          type: string
-        stream_id:
-          maxLength: 512
-          type: string
-        source_port:
-          oneOf:
-            -
-              enum:
-                - 0
-              type: integer
-            -
+    SrtInputRendezvousSettings:
+      allOf:
+        -
+          required:
+            - url
+          type: object
+          properties:
+            url:
+              maxLength: 128
+              type: string
+        -
+          $ref: '#/components/schemas/SrtInputCommonSettings'
+    SrtInputListenerSettings:
+      allOf:
+        -
+          required:
+            - port
+          type: object
+          properties:
+            port:
               maximum: 65535
               minimum: 1024
               type: integer
-          default: 0
-    SrtInputRendezvousSettings:
-      required:
-        - url
-      type: object
-      allOf:
         -
           $ref: '#/components/schemas/SrtInputCommonSettings'
-      properties:
-        url:
-          maxLength: 128
-          type: string
-    SrtInputListenerSettings:
-      required:
-        - port
-      type: object
-      allOf:
-        -
-          $ref: '#/components/schemas/SrtInputCommonSettings'
-      properties:
-        port:
-          maximum: 65535
-          minimum: 1024
-          type: integer
     RtspInputSettings:
       type: object
       properties:
@@ -4892,6 +4928,8 @@ components:
         sdi:
           $ref: '#/components/schemas/SdiInputSettings'
         srt:
+          required:
+            - mode
           oneOf:
             -
               $ref: '#/components/schemas/SrtInputCallerSettings'
@@ -4923,6 +4961,8 @@ components:
         video:
           $ref: '#/components/schemas/VideoInputSettings'
         srt:
+          required:
+            - mode
           oneOf:
             -
               $ref: '#/components/schemas/SrtInputCallerSettings'
@@ -5243,6 +5283,125 @@ components:
         title: 'Example ad-hoc event'
         start: 60
         duration: 3600
+    EventStreamSettings:
+      type: object
+      properties:
+        audio:
+          type: object
+          properties:
+            bitrate:
+              type: integer
+              description: 'Audio bitrate in kbps'
+        video:
+          type: object
+          properties:
+            resolution:
+              pattern: ^\d+x\d+$|^$
+              type: string
+              description: 'Video resolution (e.g. 1920x1080)'
+              default: 1920x1080
+            framerate:
+              maximum: 99
+              minimum: 1
+              type: number
+              description: 'Video frame rate (frames per second)'
+              default: 30
+            bitrate:
+              oneOf:
+                -
+                  maximum: 50000
+                  minimum: 1
+                  type: integer
+                  description: 'Bitrate value in kbit/s'
+                -
+                  enum:
+                    - auto
+                  type: string
+                  description: 'Automatic bitrate selection'
+              description: 'Bitrate in kbit/s, or ''auto'' for automatic bitrate selection'
+              default: auto
+              example: '5000'
+    EventStreamBase:
+      required:
+        - id
+        - type
+      type: object
+      properties:
+        id:
+          $ref: '#/components/schemas/ChannelId'
+        settings:
+          $ref: '#/components/schemas/EventStreamSettings'
+        type:
+          type: string
+          description: 'Event stream type'
+    EventExistingStream:
+      allOf:
+        -
+          $ref: '#/components/schemas/EventStreamBase'
+        -
+          required:
+            - stream_id
+            - type
+          type: object
+          properties:
+            stream_id:
+              $ref: '#/components/schemas/PublisherId'
+            type:
+              enum:
+                - existing
+              type: string
+    EventNewStream:
+      allOf:
+        -
+          $ref: '#/components/schemas/EventStreamBase'
+        -
+          required:
+            - stream
+            - type
+          type: object
+          properties:
+            name:
+              type: string
+            primary:
+              type: boolean
+            stream:
+              required:
+                - app
+                - type
+                - url
+              type: object
+              properties:
+                app:
+                  type: string
+                type:
+                  enum:
+                    - rtmp
+                  type: string
+                url:
+                  type: string
+                username:
+                  type: string
+                password:
+                  type: string
+            type:
+              enum:
+                - new
+              type: string
+    EventStream:
+      required:
+        - type
+      type: object
+      oneOf:
+        -
+          $ref: '#/components/schemas/EventExistingStream'
+        -
+          $ref: '#/components/schemas/EventNewStream'
+      discriminator:
+        propertyName: type
+        mapping:
+          existing: '#/components/schemas/EventExistingStream'
+          new: '#/components/schemas/EventNewStream'
+      properties: {  }
     Event:
       required:
         - id
@@ -5278,21 +5437,7 @@ components:
         streams:
           type: array
           items:
-            type: object
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              stream:
-                type: object
-                properties:
-                  app:
-                    type: string
-                  type:
-                    type: string
-                  url:
-                    type: string
+            $ref: '#/components/schemas/EventStream'
         tags:
           type: string
       description: 'Basic event information'
@@ -5315,174 +5460,6 @@ components:
               url: 'rtmp://0_yyyyyy.p.kpublish.kaltura.com:1935/kLive?t=zzzzzz'
         tags: test
         title: 'Example event'
-    EventDetails:
-      required:
-        - id
-        - status
-        - title
-        - start
-        - finish
-      type: object
-      properties:
-        description:
-          type: string
-        enabled:
-          type: boolean
-        ext_id:
-          type: string
-        extra_data:
-          type: object
-          properties:
-            capabilities:
-              type: array
-              items:
-                $ref: '#/components/schemas/CmsCapabilityDescriptor'
-              description: 'An array of CMS capability descriptors available for the event in its current status. Each item in the array represents a specific capability and its state.'
-              example:
-                -
-                  name: start
-                  state: Disabled
-                -
-                  name: stop
-                  state: Enabled
-                -
-                  name: pause
-                  state: Enabled
-                -
-                  name: resume
-                  state: Disabled
-                -
-                  name: extend
-                  state: Disabled
-            desc:
-              type: string
-              description: 'Additional information about the event.'
-        finish:
-          type: integer
-        id:
-          type: string
-        organizer:
-          type: string
-        recorders:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-        reminders:
-          type: array
-          items:
-            type: object
-            properties:
-              at:
-                type: integer
-              done:
-                type: boolean
-              reminder:
-                type: string
-        scheduled_finish:
-          type: integer
-        scheduled_start:
-          type: integer
-        start:
-          type: integer
-        status:
-          $ref: '#/components/schemas/EventStatus'
-        streams:
-          type: array
-          items:
-            type: object
-            properties:
-              id:
-                type: string
-              name:
-                type: string
-              stream:
-                type: object
-                properties:
-                  app:
-                    type: string
-                  type:
-                    type: string
-                  url:
-                    type: string
-        tags:
-          type: string
-        title:
-          type: string
-        confirmed:
-          type: boolean
-          description: 'When scheduled event confirmation is enabled, scheduled event will start only if this field is set to true'
-      description: 'Detailed event information'
-      example:
-        description: "Example event\r\nmultiline\r\ndescription"
-        enabled: true
-        ext_id: '3807702'
-        extra_data:
-          categories:
-            -
-              name: confirm
-              state: Disabled
-            -
-              name: start
-              state: Disabled
-          desc: 'kaltura, https://www.kaltura.com, 1_wnr61iwo'
-        finish: 1592571308
-        id: 782ec0f4bbcc48e2a42a44eea5e69dc5
-        organizer: name@company.com
-        recorders:
-          -
-            id: '1'
-        reminders:
-          -
-            at: 300
-            done: true
-            reminder: start
-          -
-            at: 300
-            done: false
-            reminder: finish
-        scheduled_finish: 1592573400
-        scheduled_start: 1592571600
-        start: 1592571304
-        status: finished
-        confirmed: true
-        streams:
-          -
-            id: '1'
-            name: 'Example event'
-            stream:
-              app: 0_xxxxxx_1
-              type: rtmp
-              url: 'rtmp://0_yyyyyy.p.kpublish.kaltura.com:1935/kLive?t=zzzzzzz'
-        tags: test
-        title: 'Example event'
-    CmsCapabilityDescriptor:
-      required:
-        - name
-        - state
-      type: object
-      properties:
-        name:
-          enum:
-            - start
-            - stop
-            - pause
-            - resume
-            - extend
-            - confirm
-          type: string
-          description: 'The name of the CMS capability.'
-          example: start
-        state:
-          enum:
-            - Enabled
-            - Disabled
-          type: string
-          description: 'The current state of the CMS capability.'
-          example: Enabled
-      description: 'Represents a CMS capability with a name and a state indicating whether it is enabled, disabled, or not supported.'
     SystemStatus:
       type: object
       properties:
@@ -5503,10 +5480,10 @@ components:
           type: boolean
           description: 'Indicator of high CPU load'
         cputemp:
-          type: integer
+          type: number
           description: 'CPU temperature in degrees Celsius'
         cputemp_threshold:
-          type: integer
+          type: number
           description: 'Threshold after which CPU temperature is considered as too high'
       description: 'Information about system''s hardware condition'
       example:
@@ -5673,6 +5650,9 @@ components:
     StorageTransferState:
       enum:
         - completed
+        - disabled
+        - nomedia
+        - running
       type: string
     StorageTransferStatus:
       required:
@@ -5839,6 +5819,24 @@ components:
         application/json:
           schema:
             $ref: '#/components/schemas/ErrorResponse'
+    badRequest:
+      description: 'Invalid parameters'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: badrequest
+            message: 'Detailed error description'
+    serviceUnavailable:
+      description: 'Service Unavailable'
+      content:
+        application/json:
+          schema:
+            $ref: '#/components/schemas/ErrorResponse'
+          example:
+            status: unavailable
+            message: 'Detailed error description'
     singleTouchControlNotFound:
       description: 'Single touch control object not found.'
       content:

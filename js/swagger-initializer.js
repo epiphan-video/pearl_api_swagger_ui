@@ -1,7 +1,12 @@
 window.onload = function () {
+  pathname = window.location.pathname.length > 0 ? window.location.pathname : ''; 
+  if (pathname.startsWith('/')) {
+    pathname = pathname.substring(1);
+  }
+  pathname = pathname.length > 0 ? pathname.split('/')[0] : 'pearl_api_swagger_ui'; 
   window.ui = SwaggerUIBundle({
     // SET the URL to the file openapi.yml
-    url: window.location.protocol + "//" + window.location.host + "/api/v2.0/openapi.yml",
+    url: window.location.protocol + "//" + window.location.host + '/' + pathname + "/api/v2.0/openapi.yml",
     dom_id: '#swagger-ui',
     deepLinking: true,
     docExpansion: "none",
@@ -24,13 +29,13 @@ window.onload = function () {
                     { className: "topbar-wrapper" },
                     ui.React.createElement('a', {
                       // SET the URL of the link for the image in the left top corner when the user clicks it
-                      href: "/admin",
+                      href: "https://epiphan.com",
                       rel: "noopener noreferrer",
                       className: "link"
                     }, ui.React.createElement('img', {
                       height: "80",
                       // SET the URL of the image in the left top corner
-                      src: "/images/product.png",
+                      src: "./images/epiphan-logo-dark.svg",
                       alt: "Pearl"
                     }),
                       ui.React.createElement(
