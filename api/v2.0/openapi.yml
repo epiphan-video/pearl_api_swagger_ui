@@ -4088,42 +4088,25 @@ components:
                   type: boolean
                   description: 'Whether audio is disabled'
                   default: false
-                  x-pearl-settings-storage:
-                    cfgdb_name: DISABLE_AUDIO
                 url:
                   maxLength: 500
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: RTMP_URL
                 stream:
                   maxLength: 500
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: RTMP_STREAM
                 username:
                   maxLength: 250
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: RTMP_USERNAME
                 password:
                   maxLength: 250
                   type: string
                   format: password
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: RTMP_PASSWORD
                 auto_created:
                   type: boolean
-              x-pearl-settings-storage:
-                class_name: RtmpPublisherSettingsDetails
-                namespace: system\Grid\Publishers\Settings\Storage
-          x-pearl-settings-storage:
-            class_name: RtmpPublisherSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
     UdpPublisherCommonSettings:
@@ -4134,45 +4117,31 @@ components:
           pattern: '^[0-9.]*$'
           type: string
           default: ''
-          x-pearl-settings-storage:
-            cfgdb_name: UNICAST_ADDRESS
         sap:
           type: boolean
           description: 'Whether to enable SAP announcement'
           default: false
-          x-pearl-settings-storage:
-            cfgdb_name: SAP
         sap_ip:
           maxLength: 500
           pattern: '^[0-9.]*$'
           type: string
           default: ''
-          x-pearl-settings-storage:
-            cfgdb_name: SAP_IP
         sap_channel:
           type: integer
           default: 0
-          x-pearl-settings-storage:
-            cfgdb_name: SAP_CHANNEL_NO
         sap_play_group:
           maxLength: 50
           type: string
           default: ''
-          x-pearl-settings-storage:
-            cfgdb_name: SAP_PLAY_GROUP
         limit_bandwidth:
           type: boolean
           description: 'Whether to limit bandwidth rate'
           default: false
-          x-pearl-settings-storage:
-            cfgdb_name: LIMIT_BANDWIDTH
         limit_bandwidth_rate:
           minimum: 0
           type: integer
           description: 'Bandwidth rate limit in kbits'
           default: 0
-          x-pearl-settings-storage:
-            cfgdb_name: MULTICAST_RATE_LIMIT
     RtpUdpPublisherSettings:
       allOf:
         -
@@ -4194,22 +4163,11 @@ components:
                   minimum: 1
                   type: integer
                   default: 6000
-                  x-pearl-settings-storage:
-                    cfgdb_name: UNICAST_APORT
                 video_port:
                   maximum: 65535
                   minimum: 1
                   type: integer
                   default: 6002
-                  x-pearl-settings-storage:
-                    cfgdb_name: UNICAST_VPORT
-              x-pearl-settings-storage:
-                class_name: RtpUdpPublisherSettingsDetails
-                namespace: system\Grid\Publishers\Settings\Storage
-          x-pearl-settings-storage:
-            class_name: RtpUdpPublisherSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
     MpegTsPublisherCommonSettings:
@@ -4222,11 +4180,6 @@ components:
               minimum: 1
               type: integer
               default: 6004
-              x-pearl-settings-storage:
-                cfgdb_name: UNICAST_MPORT
-          x-pearl-settings-storage:
-            class_name: MpegTsPublisherCommonSettings
-            namespace: system\Grid\Publishers\Settings\Storage
         -
           $ref: '#/components/schemas/UdpPublisherCommonSettings'
     MpegTsUdpPublisherSettings:
@@ -4238,10 +4191,6 @@ components:
           properties:
             mpegts_udp:
               $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
-          x-pearl-settings-storage:
-            class_name: MpegTsUdpPublisherSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
     MpegTsRtpPublisherSettings:
@@ -4253,10 +4202,6 @@ components:
           properties:
             mpegts_rtp:
               $ref: '#/components/schemas/MpegTsPublisherCommonSettings'
-          x-pearl-settings-storage:
-            class_name: MpegTsRtpPublisherSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
     NdiPublisherSettings:
@@ -4273,27 +4218,14 @@ components:
                   type: boolean
                   description: 'Whether audio is disabled'
                   default: false
-                  x-pearl-settings-storage:
-                    cfgdb_name: DISABLE_AUDIO
                 ndi_name:
                   maxLength: 500
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: NDI_NAME
                 ndi_group:
                   maxLength: 500
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: NDI_GROUP
-              x-pearl-settings-storage:
-                class_name: NdiPublisherSettingsDetails
-                namespace: system\Grid\Publishers\Settings\Storage
-          x-pearl-settings-storage:
-            class_name: NdiPublisherSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
     HlsPublisherSettings:
@@ -4312,73 +4244,46 @@ components:
                   type: boolean
                   description: 'Whether audio is disabled'
                   default: false
-                  x-pearl-settings-storage:
-                    cfgdb_name: DISABLE_AUDIO
                 url:
                   maxLength: 500
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_URL
                 master_pl_url:
                   maxLength: 500
                   type: string
                   description: 'Master playlist URL'
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_MASTER_PL_URL
                 username:
                   maxLength: 250
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_USERNAME
                 password:
                   maxLength: 250
                   type: string
                   format: password
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_PASSWORD
                 segment_duration:
                   maximum: 8
                   minimum: 1
                   type: integer
                   default: 6
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_SEGMENT_DURATION
                 list_size:
                   minimum: 1
                   type: integer
                   default: 6
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_LIST_SIZE
                 user_agent:
                   maxLength: 100
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_USER_AGENT
                 http_method:
                   maxLength: 20
                   minLength: 1
                   type: string
                   default: POST
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_INGEST_METHOD
                 media_seg_tmpl:
                   maxLength: 1000
                   type: string
                   default: ''
-                  x-pearl-settings-storage:
-                    cfgdb_name: HLS_MEDIA_SEG_TMPL
-              x-pearl-settings-storage:
-                class_name: HlsPublisherSettingsDetails
-                namespace: system\Grid\Publishers\Settings\Storage
-          x-pearl-settings-storage:
-            class_name: HlsPublisherSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
     SrtPublisherCommonSettings:
@@ -4390,8 +4295,6 @@ components:
           type: boolean
           description: 'Whether audio is disabled'
           default: false
-          x-pearl-settings-storage:
-            cfgdb_name: DISABLE_AUDIO
         mode:
           $ref: '#/components/schemas/SrtMode'
         latency:
@@ -4399,15 +4302,11 @@ components:
           minimum: 80
           type: integer
           default: 125
-          x-pearl-settings-storage:
-            cfgdb_name: SRT_LATENCY
         bw_recovery_overhead:
           maximum: 100
           minimum: 5
           type: integer
           default: 25
-          x-pearl-settings-storage:
-            cfgdb_name: BW_RECOVERY_OVERHEAD
         encryption:
           $ref: '#/components/schemas/SrtEncryptionSettings'
     SrtPublisherCallerSettings:
@@ -4421,14 +4320,10 @@ components:
               maxLength: 500
               type: string
               default: ''
-              x-pearl-settings-storage:
-                cfgdb_name: SRT_URL
             stream_id:
               maxLength: 512
               type: string
               default: ''
-              x-pearl-settings-storage:
-                cfgdb_name: STREAM_ID
             source_port:
               oneOf:
                 -
@@ -4440,12 +4335,6 @@ components:
                   minimum: 1024
                   type: integer
               default: 0
-              x-pearl-settings-storage:
-                cfgdb_name: SOURCE_PORT
-          x-pearl-settings-storage:
-            class_name: SrtPublisherCallerSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\SrtPublisherHandler
         -
           $ref: '#/components/schemas/SrtPublisherCommonSettings'
     SrtPublisherRendezvousSettings:
@@ -4459,12 +4348,6 @@ components:
               maxLength: 500
               type: string
               default: ''
-              x-pearl-settings-storage:
-                cfgdb_name: SRT_URL
-          x-pearl-settings-storage:
-            class_name: SrtPublisherRendezvousSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\SrtPublisherHandler
         -
           $ref: '#/components/schemas/SrtPublisherCommonSettings'
     SrtPublisherListenerSettings:
@@ -4478,12 +4361,6 @@ components:
               maximum: 65535
               minimum: 1024
               type: integer
-              x-pearl-settings-storage:
-                description: 'SrtPublisherHandler processes this property (configdb key PORT)'
-          x-pearl-settings-storage:
-            class_name: SrtPublisherListenerSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\SrtPublisherHandler
         -
           $ref: '#/components/schemas/SrtPublisherCommonSettings'
     SrtPublisherSettings:
@@ -4509,14 +4386,6 @@ components:
                   listener: '#/components/schemas/SrtPublisherListenerSettings'
                   caller: '#/components/schemas/SrtPublisherCallerSettings'
                   rendezvous: '#/components/schemas/SrtPublisherRendezvousSettings'
-              x-pearl-settings-storage:
-                discriminator:
-                  cfgdb_name: MODE
-                  default: caller
-          x-pearl-settings-storage:
-            class_name: SrtPublisherSettings
-            namespace: system\Grid\Publishers\Settings\Storage
-            handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
         -
           $ref: '#/components/schemas/PublisherBaseSettings'
     PublisherSettings:
@@ -4551,8 +4420,6 @@ components:
           ndi: '#/components/schemas/NdiPublisherSettings'
           hls: '#/components/schemas/HlsPublisherSettings'
           srt: '#/components/schemas/SrtPublisherSettings'
-      x-pearl-settings-storage:
-        discriminator_handler: system\Grid\Publishers\Settings\Storage\Handlers\PublisherHandler
       properties: {  }
     IdentifiedPublisherSettings:
       required:
@@ -4569,11 +4436,6 @@ components:
           type: string
         settings:
           $ref: '#/components/schemas/PublisherSettings'
-      x-pearl-settings-storage:
-        save_description: 'Change publisher settings'
-        class_name: SettingsStorage
-        namespace: system\Grid\Publishers\Settings\Storage
-        handler: system\Grid\Publishers\Settings\Storage\Handlers\IdentifiedPublisherHandler
     ChannelId:
       type: string
       description: 'Auto-assigned Channel ID'
