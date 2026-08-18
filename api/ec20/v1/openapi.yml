@@ -1,0 +1,1731 @@
+openapi: 3.0.0
+info:
+  title: Epiphan EC20 PTZ Camera REST API
+  description: |
+    Comprehensive guide to the Epiphan EC20 PTZ Camera's HTTP REST interface.
+    This API allows for programmatic control over camera functions such as PTZ
+    movements, preset management, video settings, and system configuration.
+
+    ## Authentication
+
+    Every endpoint requires **HTTP Digest authentication (MD5)** using the camera's
+    administrator credentials. The factory default is username `admin`, password
+    `admin` (source: Epiphan EC20 user guide, "EC20 web interface overview").
+    Change it before putting a camera on a shared network.
+
+    ## Why there is no "Try it out" button
+
+    Two hard limits make in-browser requests impossible against a real camera:
+
+    1. **Digest auth.** Swagger UI's request layer cannot perform the two-step
+       digest challenge/response handshake. It only supports Basic and Bearer.
+    2. **CORS.** The camera does not return `Access-Control-Allow-Origin`
+       headers, so the browser blocks the response before your code sees it.
+       Serving this page over HTTPS adds a mixed-content block on top.
+
+    Every operation below therefore carries a ready-to-paste `curl` command
+    instead. Run those from a machine on the same network as the camera.
+
+    ## Value types
+
+    Write these values as JSON **strings** (`"on"`, `"1920"`), not bare booleans or
+    numbers. `{"action": true}` will not work where `{"action": "on"}` is expected.
+  version: v1
+servers:
+  - url: http://{camera-ip}/api/v1
+    variables:
+      camera-ip:
+        default: 192.168.100.88
+        description: The IP address of the camera.
+security:
+  - digestAuth: []
+components:
+  securitySchemes:
+    digestAuth:
+      type: http
+      scheme: digest
+      description: HTTP Digest authentication (MD5) using the camera's administrator credentials.
+  schemas:
+    StandbyState:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: ["on", "off"]
+          description: "on = camera active, off = standby"
+    StandbyLight:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ["flicker", "steadyOn", "normal"]
+    DigitalZoom:
+      type: object
+      properties:
+        digitalzoom:
+          type: string
+          enum: ["off", "2x", "4x", "8x", "16x", "superZoom"]
+    DviMode:
+      type: object
+      properties:
+        dvimode:
+          type: string
+          enum: ["hdmi", "dvi"]
+    SystemReset:
+      type: object
+      required: [keepNetwork]
+      properties:
+        keepNetwork:
+          type: string
+          enum: ["true", "false"]
+    FreezeState:
+      type: object
+      properties:
+        freeze:
+          type: string
+          enum: ["on", "off"]
+    IrEnable:
+      type: object
+      properties:
+        enable:
+          type: string
+          enum: ["on", "off", "toggle"]
+    OsdAction:
+      type: object
+      properties:
+        action:
+          type: string
+          enum: ["on", "off", "toggle", "enter", "back", "up", "down", "left", "right"]
+    RecordState:
+      type: object
+      properties:
+        status:
+          type: string
+          enum: ["on", "off"]
+        filename:
+          type: string
+          description: Optional filename. Defaults to timestamp.
+        mode:
+          type: string
+          description: Recording mode (read-only), e.g. realTime.
+        fileID:
+          type: string
+          description: Read-only.
+        format:
+          type: string
+          description: Read-only.
+    PtzCurrentPosition:
+      type: object
+      properties:
+        currentPanPosition:
+          type: integer
+        currentTiltPosition:
+          type: integer
+        currentZoomPosition:
+          type: integer
+    PtzSpeeds:
+      type: object
+      properties:
+        normal:
+          type: object
+          properties:
+            panSpeed:
+              type: string
+              description: range 0-24
+            tiltSpeed:
+              type: string
+              description: range 0-20
+            zoomSpeed:
+              type: string
+              description: range 0-7
+    PtzRelativeMove:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: ["up", "down", "left", "right", "upleft", "upright", "downleft", "downright", "stop"]
+        pan_speed:
+          type: string
+          description: 1-24
+        tilt_speed:
+          type: string
+          description: 1-20
+    PtzAbsolute:
+      type: object
+      properties:
+        panPos:
+          description: approx -170 to 170 Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        tiltPos:
+          description: approx -30 to 90 Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        zoomPos:
+          description: 0 to 4912 Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        panSpeed:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        tiltSpeed:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        zoomSpeed:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+    PtzRelativePos:
+      type: object
+      required: [panPos, tiltPos]
+      properties:
+        panPos:
+          type: string
+        tiltPos:
+          type: string
+        panSpeed:
+          type: string
+        tiltSpeed:
+          type: string
+    ZoomControl:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: ["tele", "wide", "stop"]
+        speed:
+          type: string
+          enum: ["1", "2", "3", "4", "5", "6", "7"]
+        type:
+          type: string
+          enum: ["standard", "variable"]
+    FocusControl:
+      type: object
+      required: [action]
+      properties:
+        action:
+          type: string
+          enum: ["far", "near", "stop"]
+        speed:
+          type: string
+          enum: ["1", "2", "3", "4", "5", "6", "7"]
+        type:
+          type: string
+          enum: ["standard", "variable"]
+    FocusMode:
+      type: object
+      required: [mode]
+      properties:
+        mode:
+          type: string
+          enum: ["auto", "manual", "onepush", "toggle"]
+    FocusSensitivity:
+      type: object
+      required: [sensitivity]
+      properties:
+        sensitivity:
+          type: string
+          enum: ["high", "normal", "low"]
+    FocusZone:
+      type: object
+      required: [zone]
+      properties:
+        zone:
+          type: string
+          enum: ["top", "center", "bottom", "front"]
+    FocusPosition:
+      type: object
+      required: [focusPos]
+      properties:
+        focusPos:
+          type: string
+          description: 236-4148
+    PresetOp:
+      type: object
+      required: [presetNumber]
+      properties:
+        presetNumber:
+          type: string
+          description: 0-254
+    PresetSpeed:
+      type: object
+      required: [level]
+      properties:
+        level:
+          type: string
+          description: 0-24
+    PresetSpeedPatch:
+      type: object
+      required: [op]
+      properties:
+        op:
+          type: string
+          enum: ["inc", "dec"]
+    ColorParam:
+      type: object
+      properties:
+        whiteBalanceMode:
+          type: string
+          enum: ["auto", "indoor", "outdoor", "onepush", "manual", "var"]
+        redGain:
+          type: string
+        blueGain:
+          type: string
+        redGainTuning:
+          type: string
+        blueGainTuning:
+          type: string
+        colorTemp:
+          type: string
+        saturation:
+          type: string
+        hue:
+          type: string
+    ParamPatch:
+      type: object
+      required: [target, op]
+      properties:
+        target:
+          type: string
+        op:
+          type: string
+          enum: ["reset", "inc", "dec"]
+        value:
+          type: string
+    ExposureParam:
+      type: object
+      properties:
+        exposureMode:
+          type: string
+          enum: ["fullAuto", "manual", "shutterPriority", "irisPriority", "bright"]
+        shutter:
+          type: string
+        iris:
+          type: string
+        gain:
+          type: string
+        brightness:
+          type: string
+        gainLimit:
+          type: string
+        compensationMode:
+          type: string
+          enum: ["on", "off"]
+        exposureCompensation:
+          type: string
+        backlight:
+          type: string
+          enum: ["on", "off"]
+        meter:
+          type: string
+          enum: ["average", "center", "smart", "top"]
+        dynamicRangeControl:
+          type: string
+        antiFlicker:
+          type: string
+          enum: ["off", "50hz", "60hz"]
+    PictureParam:
+      type: object
+      properties:
+        noise3d:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        gamma:
+          type: string
+        luminance:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        contrast:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        sharpness:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+    ImageOrientation:
+      type: object
+      properties:
+        horizontalFlip:
+          type: string
+          enum: ["on", "off"]
+        verticalFlip:
+          type: string
+          enum: ["on", "off"]
+    VideoParam:
+      type: object
+      properties:
+        hardwareOutput:
+          type: object
+          description: Read-only status of physical outputs.
+          properties:
+            hdmi:
+              type: string
+              enum: ["on", "off"]
+            3g-sdi:
+              type: string
+              enum: ["on", "off"]
+            12g-sdi:
+              type: string
+              enum: ["on", "off"]
+            usb:
+              type: string
+              enum: ["on", "off"]
+            ip:
+              type: string
+              enum: ["on", "off"]
+        hardwareOutputResolution:
+          type: string
+          description: Video output (HDMI/SDI) format, e.g. 1080p60, 2160p60.
+        stream1:
+          $ref: '#/components/schemas/StreamSettings'
+        stream2:
+          $ref: '#/components/schemas/StreamSettings'
+    StreamSettings:
+      type: object
+      properties:
+        encode:
+          type: string
+          enum: ["h264", "h265", "mjpeg"]
+        framerate:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        profile:
+          type: string
+        bitrateControl:
+          type: string
+          enum: ["cbr", "vbr"]
+        slice:
+          type: string
+        width:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        height:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        gop:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        bitrate:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        qFactor:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        minQ:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        maxQ:
+          description: Send as a JSON string (e.g. "1920"); the device returns it as a JSON number. The type constraint is intentionally omitted so both forms validate.
+        sliceSize:
+          type: string
+          description: Slice size in macroblocks. Present in vendor POST /video/param examples but not otherwise documented. UNVERIFIED against firmware.
+    AiParam:
+      type: object
+      properties:
+        enable:
+          type: string
+          enum: ["on", "off"]
+        mode:
+          type: string
+          enum: ["tracking", "zone"]
+        debugMode:
+          type: string
+          enum: ["debug", "off", "default"]
+        hintCue:
+          type: string
+          enum: ["on", "off"]
+        targetLostTimeOut:
+          type: integer
+          description: Seconds before tracking gives up on a lost target.
+        presenterTracking:
+          type: object
+          properties:
+            figureSize:
+              type: string
+            customFigureSize:
+              type: string
+            startPosition:
+              type: string
+            figurePosition:
+              type: string
+        zoneTracking:
+          type: object
+          properties:
+            startArea:
+              type: string
+    AiPresenterSelect:
+      type: object
+      required: [selection]
+      properties:
+        selection:
+          type: string
+          enum: ["left", "right", "confirm"]
+    RtmpStream:
+      type: object
+      properties:
+        enable:
+          type: string
+          enum: ["on", "off"]
+        mrl:
+          type: string
+          description: RTMP(S) server URL.
+        key:
+          type: string
+          description: Stream key.
+        video_en:
+          type: string
+          enum: ["on", "off"]
+        audio_en:
+          type: string
+          enum: ["on", "off"]
+        active:
+          type: string
+          description: Read-only stream state.
+        err_msg:
+          type: string
+          description: Read-only error message.
+    RtmpSettings:
+      type: object
+      properties:
+        stream1:
+          $ref: '#/components/schemas/RtmpStream'
+        stream2:
+          $ref: '#/components/schemas/RtmpStream'
+    SrtSettings:
+      type: object
+      properties:
+        enable:
+          type: string
+          enum: ["on", "off"]
+        mode:
+          type: string
+          enum: ["listener", "caller"]
+        server:
+          type: string
+        port:
+          type: integer
+        encryption:
+          type: string
+          enum: ["none", "aes128", "aes192", "aes256"]
+        password:
+          type: string
+        bandwidth:
+          type: integer
+        latency:
+          type: integer
+        streamId:
+          type: string
+    MulticastSettings:
+      type: object
+      properties:
+        enable:
+          type: string
+          enum: ["on", "off"]
+        ip:
+          type: string
+        port:
+          type: integer
+    OnvifSettings:
+      type: object
+      properties:
+        enable:
+          type: string
+          enum: ["on", "off"]
+        auth:
+          type: string
+          enum: ["on", "off"]
+    TallyParam:
+      type: object
+      properties:
+        enable:
+          type: string
+          enum: ["on", "off"]
+        action:
+          type: string
+          enum: ["on", "off", "blink"]
+        status:
+          type: string
+          enum: ["on", "off"]
+        tallyOption:
+          type: string
+          enum: ["red", "green"]
+
+paths:
+  # 1. System & Power
+  /misc/standby:
+    get:
+      summary: Get standby status
+      tags: [System]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandbyState'
+              example:
+                action: "on"
+    post:
+      summary: Set standby status
+      tags: [System]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandbyState'
+            example:
+              action: "on"
+      responses:
+        '200':
+          description: Success
+
+  /misc/standbylight:
+    get:
+      summary: Get standby LED status
+      tags: [System]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StandbyLight'
+              example:
+                status: "steadyOn"
+    post:
+      summary: Configure front-panel standby LED
+      tags: [System]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/StandbyLight'
+            example:
+              status: "flicker"
+      responses:
+        '200':
+          description: Success
+
+  /misc/digitalzoom:
+    get:
+      summary: Get max digital zoom factor
+      tags: [System]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DigitalZoom'
+              example:
+                digitalzoom: "off"
+    post:
+      summary: Set max digital zoom factor
+      tags: [System]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DigitalZoom'
+            example:
+              digitalzoom: "off"
+      responses:
+        '200':
+          description: Success
+
+  /misc/dvimode:
+    get:
+      summary: Get HDMI port signal mode
+      tags: [System]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DviMode'
+              example:
+                dvimode: "hdmi"
+    post:
+      summary: Set HDMI port signal mode
+      tags: [System]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DviMode'
+            example:
+              dvimode: "hdmi"
+      responses:
+        '200':
+          description: Success
+
+  /misc/record:
+    get:
+      summary: Get recording status
+      tags: [System]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RecordState'
+              example:
+                status: "off"
+                mode: "realTime"
+                filename: "ec20_ep0000000_20260805_180004"
+                fileID: ""
+                format: ""
+    post:
+      summary: Control recording
+      tags: [System]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordState'
+            example:
+              status: "on"
+              filename: "my_video"
+      responses:
+        '200':
+          description: Success
+
+  /misc/freeze:
+    get:
+      summary: Get video freeze status
+      tags: [System]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FreezeState'
+              example:
+                freeze: "off"
+    post:
+      summary: Freeze video output
+      tags: [System]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FreezeState'
+            example:
+              freeze: "on"
+      responses:
+        '200':
+          description: Success
+
+  /misc/reset/system:
+    post:
+      summary: Factory reset system
+      tags: [System]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SystemReset'
+            example:
+              keepNetwork: "true"
+      responses:
+        '200':
+          description: Success
+
+  /misc/reset/network:
+    post:
+      summary: Reset network settings
+      tags: [System]
+      responses:
+        '200':
+          description: Success
+
+  /misc/restore:
+    post:
+      summary: Restore default IP address and password
+      tags: [System]
+      description: No request body should be included.
+      responses:
+        '200':
+          description: Success
+
+  # 2. IR & OSD
+  /ir/enable:
+    get:
+      summary: Get IR receiver status
+      tags: [IR & OSD]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IrEnable'
+              example:
+                enable: "on"
+    post:
+      summary: Set IR receiver status
+      tags: [IR & OSD]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IrEnable'
+            example:
+              enable: "on"
+      responses:
+        '200':
+          description: Success
+
+  /osd/action:
+    get:
+      summary: Get OSD menu status
+      tags: [IR & OSD]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  action:
+                    type: string
+              example:
+                action: "off"
+    post:
+      summary: Control OSD menu
+      tags: [IR & OSD]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OsdAction'
+            example:
+              action: "toggle"
+      responses:
+        '200':
+          description: Success
+
+  /osd/language:
+    get:
+      summary: Get OSD language
+      tags: [IR & OSD]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  language:
+                    type: string
+                    enum: ["Chinese", "English", "Russian"]
+              example:
+                language: "English"
+
+  /osd/save:
+    post:
+      summary: Save current settings
+      tags: [IR & OSD]
+      description: No request body should be included.
+      responses:
+        '200':
+          description: Success
+
+  /osd/restoredefault:
+    post:
+      summary: Restore factory default settings
+      tags: [IR & OSD]
+      description: No request body should be included.
+      responses:
+        '200':
+          description: Success
+
+  # 3. PTZ
+  /movement/current-position:
+    get:
+      summary: Get current PTZ position
+      tags: [PTZ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PtzCurrentPosition'
+              example:
+                currentPanPosition: 500
+                currentTiltPosition: 500
+                currentZoomPosition: 1200
+
+  /movement/speeds:
+    get:
+      summary: Get PTZ speeds
+      tags: [PTZ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PtzSpeeds'
+              example:
+                normal:
+                  panSpeed: "24"
+                  tiltSpeed: "20"
+                  zoomSpeed: "5"
+    post:
+      summary: Set PTZ speeds
+      tags: [PTZ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PtzSpeeds'
+            example:
+              normal:
+                panSpeed: "10"
+                tiltSpeed: "10"
+                zoomSpeed: "3"
+      responses:
+        '200':
+          description: Success
+
+  /movement/relative/pan-tilt:
+    post:
+      summary: Relative Pan/Tilt Move
+      tags: [PTZ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PtzRelativeMove'
+            example:
+              action: "up"
+              pan_speed: "24"
+              tilt_speed: "20"
+      responses:
+        '200':
+          description: Success
+
+  /movement/absolute/position:
+    get:
+      summary: Get absolute PTZ position and speeds
+      tags: [PTZ]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PtzAbsolute'
+              example:
+                panPos: -36
+                panSpeed: 0
+                tiltPos: -25
+                tiltSpeed: 0
+                zoomPos: 0
+                zoomSpeed: 0
+    post:
+      summary: Absolute PTZ Move
+      tags: [PTZ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PtzAbsolute'
+            example:
+              panPos: "-90"
+              tiltPos: "90"
+              zoomPos: "400"
+              panSpeed: "17"
+              tiltSpeed: "10"
+              zoomSpeed: "1"
+      responses:
+        '200':
+          description: Success
+
+  /movement/relative/position:
+    post:
+      summary: Relative Offset Move
+      tags: [PTZ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PtzRelativePos'
+            example:
+              panPos: "-10"
+              tiltPos: "10"
+              panSpeed: "17"
+              tiltSpeed: "10"
+      responses:
+        '200':
+          description: Success
+
+  /movement/relative/zoom:
+    post:
+      summary: Zoom Control
+      tags: [PTZ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ZoomControl'
+            example:
+              action: "tele"
+              speed: "1"
+              type: "standard"
+      responses:
+        '200':
+          description: Success
+
+  /movement/relative/focus:
+    post:
+      summary: Focus Control
+      tags: [PTZ]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FocusControl'
+            example:
+              action: "far"
+              speed: "1"
+              type: "standard"
+      responses:
+        '200':
+          description: Success
+
+  /movement/reset:
+    post:
+      summary: Reset PT Head
+      tags: [PTZ]
+      responses:
+        '200':
+          description: Success
+
+  /presets/home:
+    post:
+      summary: Return to Home Position
+      tags: [PTZ]
+      description: No request body should be included.
+      responses:
+        '200':
+          description: Success
+
+  # 4. Focus & AF
+  /focus/mode:
+    get:
+      summary: Get focus mode
+      tags: [Focus]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FocusMode'
+              example:
+                mode: "auto"
+    post:
+      summary: Set focus mode
+      tags: [Focus]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FocusMode'
+            example:
+              mode: "auto"
+      responses:
+        '200':
+          description: Success
+
+  /focus/sensitivity:
+    get:
+      summary: Get AF sensitivity
+      tags: [Focus]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FocusSensitivity'
+              example:
+                sensitivity: "normal"
+    post:
+      summary: Set AF sensitivity
+      tags: [Focus]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FocusSensitivity'
+            example:
+              sensitivity: "high"
+      responses:
+        '200':
+          description: Success
+
+  /focus/zone:
+    get:
+      summary: Get AF zone
+      tags: [Focus]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FocusZone'
+              example:
+                zone: "center"
+    post:
+      summary: Set AF zone
+      tags: [Focus]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FocusZone'
+            example:
+              zone: "top"
+      responses:
+        '200':
+          description: Success
+
+  /focus/position:
+    get:
+      summary: Get absolute focus position
+      tags: [Focus]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FocusPosition'
+              example:
+                focusPos: "3200"
+    post:
+      summary: Set absolute focus position
+      tags: [Focus]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/FocusPosition'
+            example:
+              focusPos: "236"
+      responses:
+        '200':
+          description: Success
+
+  # 5. Presets
+  /presets/save:
+    post:
+      summary: Save Preset
+      tags: [Presets]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresetOp'
+            example:
+              presetNumber: "0"
+      responses:
+        '200':
+          description: Success
+
+  /presets/reset:
+    post:
+      summary: Clear Preset
+      tags: [Presets]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresetOp'
+            example:
+              presetNumber: "0"
+      responses:
+        '200':
+          description: Success
+
+  /presets/recall:
+    post:
+      summary: Recall Preset
+      tags: [Presets]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresetOp'
+            example:
+              presetNumber: "0"
+      responses:
+        '200':
+          description: Success
+
+  /presets/speed:
+    post:
+      summary: Set Preset Speed
+      tags: [Presets]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresetSpeed'
+            example:
+              level: "0"
+      responses:
+        '200':
+          description: Success
+    patch:
+      summary: Increment/Decrement Preset Speed
+      tags: [Presets]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PresetSpeedPatch'
+            example:
+              op: "inc"
+      responses:
+        '200':
+          description: Success
+
+  # 6. Image - Color
+  /image/color/param:
+    get:
+      summary: Get Color Parameters
+      tags: [Image Color]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ColorParam'
+              example:
+                whiteBalanceMode: "auto"
+                redGain: "128"
+                blueGain: "128"
+                redGainTuning: "0"
+                blueGainTuning: "0"
+                colorTemp: "30"
+    post:
+      summary: Set Color Parameters
+      tags: [Image Color]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ColorParam'
+            example:
+              whiteBalanceMode: "var"
+              redGainTuning: "0"
+              blueGainTuning: "0"
+              colorTemp: "6600K"
+              saturation: "100%"
+              hue: "7"
+      responses:
+        '200':
+          description: Success
+    patch:
+      summary: Increment/Decrement Color Param
+      tags: [Image Color]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamPatch'
+            example:
+              target: "colorTemp"
+              op: "dec"
+              value: "2"
+      responses:
+        '200':
+          description: Success
+
+  /image/color/onepush:
+    post:
+      summary: Trigger One-Push WB
+      tags: [Image Color]
+      description: No request body should be included.
+      responses:
+        '200':
+          description: Success
+
+  # 7. Image - Exposure
+  /image/exposure/param:
+    get:
+      summary: Get Exposure Parameters
+      tags: [Image Exposure]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ExposureParam'
+              example:
+                exposureMode: "manual"
+                shutter: "8"
+                iris: "F4.0"
+                gain: "4"
+                brightness: "10"
+                gainLimit: "10"
+                compensationMode: "on"
+                exposureCompensation: "7"
+                backlight: "off"
+                meter: "center"
+                dynamicRangeControl: "4"
+                antiFlicker: "50hz"
+    post:
+      summary: Set Exposure Parameters
+      tags: [Image Exposure]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ExposureParam'
+            example:
+              exposureMode: "manual"
+              iris: "F1.8"
+              shutter: "1/6000"
+              gain: "2"
+              dynamicRangeControl: "1"
+      responses:
+        '200':
+          description: Success
+    patch:
+      summary: Increment/Decrement Exposure Param
+      tags: [Image Exposure]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamPatch'
+            example:
+              target: "shutter"
+              op: "dec"
+              value: "2"
+      responses:
+        '200':
+          description: Success
+
+  # 8. Image - Picture
+  /image/picture/param:
+    get:
+      summary: Get Picture Parameters
+      tags: [Image Picture]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PictureParam'
+              example:
+                luminance: 7
+                contrast: 7
+                sharpness: 6
+                noise3d: 6
+                gamma: "default"
+    post:
+      summary: Set Picture Parameters
+      tags: [Image Picture]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PictureParam'
+            example:
+              luminance: "13"
+              contrast: "11"
+              sharpness: "5"
+              noise3d: "0"
+              gamma: "default"
+      responses:
+        '200':
+          description: Success
+    patch:
+      summary: Increment/Decrement Picture Param
+      tags: [Image Picture]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ParamPatch'
+            example:
+              target: "sharpness"
+              op: "dec"
+              value: "1"
+      responses:
+        '200':
+          description: Success
+
+  # 9. Image Orientation
+  /image/orientation/param:
+    get:
+      summary: Get Image Orientation
+      tags: [Image Orientation]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ImageOrientation'
+              example:
+                horizontalFlip: "off"
+                verticalFlip: "on"
+    post:
+      summary: Set Image Orientation
+      tags: [Image Orientation]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ImageOrientation'
+            example:
+              horizontalFlip: "on"
+              verticalFlip: "off"
+      responses:
+        '200':
+          description: Success
+
+  # 10. Video Output
+  /video/param:
+    get:
+      summary: Get Video Output Params
+      tags: [Video Output]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideoParam'
+              example:
+                hardwareOutput:
+                  hdmi: "on"
+                  3g-sdi: "off"
+                  12g-sdi: "off"
+                  usb: "on"
+                  ip: "on"
+                hardwareOutputResolution: "2160p60"
+                stream1:
+                  encode: "h264"
+                  framerate: 60
+                  bitrateControl: "cbr"
+                  slice: "off"
+                  width: 1920
+                  height: 1080
+                  gop: 180
+                  bitrate: 3000
+                  qFactor: 80
+                  maxQ: 51
+                  minQ: 1
+                stream2:
+                  encode: "h264"
+                  framerate: 30
+                  bitrateControl: "cbr"
+                  width: 640
+                  height: 360
+                  gop: 30
+                  bitrate: 2048
+    post:
+      summary: Set Video Output Params
+      tags: [Video Output]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/VideoParam'
+            example:
+              stream1:
+                encode: "mjpeg"
+                framerate: "60"
+                profile: "MAIN"
+                bitrateControl: "cbr"
+                slice: "NO"
+                sliceSize: "23"
+                width: "1920"
+                height: "1080"
+                gop: "50"
+                bitrate: "5555"
+                minQ: "1"
+              stream2:
+                encode: "h265"
+                framerate: "60"
+                profile: "MAIN"
+                bitrateControl: "cbr"
+                slice: "NO"
+                sliceSize: "23"
+                width: "720"
+                height: "480"
+                gop: "60"
+                bitrate: "6666"
+                qFactor: "80"
+                maxQ: "51"
+                minQ: "1"
+      responses:
+        '200':
+          description: Success
+
+  # 11. AI Auto-Tracking
+  /ai/param:
+    get:
+      summary: Get AI Tracking Params
+      tags: [AI Tracking]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/AiParam'
+              example:
+                enable: "off"
+                mode: "tracking"
+                debugMode: "debug"
+                hintCue: "on"
+                presenterTracking:
+                  figureSize: "full"
+                  customFigureSize: "80"
+                  figurePosition: "middle"
+                  startPosition: "current"
+                zoneTracking:
+                  startArea: "a"
+    post:
+      summary: Set AI Tracking Params
+      tags: [AI Tracking]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiParam'
+            example:
+              enable: "on"
+              debugMode: "off"
+              hintCue: "off"
+              mode: "tracking"
+              presenterTracking:
+                figureSize: "full"
+                customFigureSize: "222"
+                startPosition: "currentLocation"
+                figurePosition: "left"
+              zoneTracking:
+                startArea: "A"
+      responses:
+        '200':
+          description: Success
+
+  /ai/presenter/select:
+    post:
+      summary: Select Presenter for Tracking
+      tags: [AI Tracking]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AiPresenterSelect'
+            example:
+              selection: "right"
+      responses:
+        '200':
+          description: Success
+
+  # 12. Tally Light
+  /tally/param:
+    get:
+      summary: Get Tally Light Params
+      tags: [Tally]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TallyParam'
+              example:
+                action: "on"
+                enable: "on"
+                status: "on"
+                tallyOption: "green"
+    post:
+      summary: Set Tally Light Params
+      tags: [Tally]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TallyParam'
+            example:
+              enable: "on"
+              action: "on"
+              status: "off"
+              tallyOption: "red"
+      responses:
+        '200':
+          description: Success
+
+  # 13. Streaming (RTMP/SRT/Multicast/ONVIF)
+  /streaming/rtmp:
+    get:
+      summary: Get RTMP Settings
+      tags: [Streaming]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/RtmpSettings'
+              example:
+                stream1:
+                  enable: "off"
+                  err_msg: "Stream disabled"
+                  key: ""
+                  mrl: "rtmps://"
+                stream2:
+                  enable: "off"
+                  active: "fail"
+                  err_msg: "Stream disabled"
+                  key: ""
+                  mrl: "rtmps://"
+    post:
+      summary: Set RTMP Settings
+      tags: [Streaming]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RtmpSettings'
+            example:
+              stream1:
+                enable: "on"
+                video_en: "on"
+                audio_en: "on"
+                mrl: "rtmps://example.com/live"
+              stream2:
+                enable: "off"
+      responses:
+        '200':
+          description: Success
+
+  /streaming/srt:
+    get:
+      summary: Get SRT Settings
+      tags: [Streaming]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SrtSettings'
+              example:
+                mode: "listener"
+                server: "192.168.100.1"
+                port: 4578
+                encryption: "none"
+                password: "1234567890"
+                bandwidth: 25
+                latency: 500
+                streamId: ""
+    post:
+      summary: Set SRT Settings
+      tags: [Streaming]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SrtSettings'
+            example:
+              enable: "on"
+              mode: "caller"
+              server: "192.168.13.101"
+              port: 4578
+              encryption: "aes128"
+              password: "1234567890"
+              bandwidth: 50
+              latency: 100
+      responses:
+        '200':
+          description: Success
+
+  /streaming/multicast:
+    get:
+      summary: Get Multicast Settings
+      tags: [Streaming]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/MulticastSettings'
+              example:
+                enable: "off"
+                ip: "224.1.2.3"
+                port: 6688
+    post:
+      summary: Set Multicast Settings
+      tags: [Streaming]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/MulticastSettings'
+            example:
+              enable: "on"
+              ip: "224.1.2.3"
+              port: 6688
+      responses:
+        '200':
+          description: Success
+
+  /streaming/onvif:
+    get:
+      summary: Get ONVIF Settings
+      tags: [Streaming]
+      responses:
+        '200':
+          description: OK
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/OnvifSettings'
+              example:
+                enable: "off"
+                auth: "off"
+    post:
+      summary: Set ONVIF Settings
+      tags: [Streaming]
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/OnvifSettings'
+            example:
+              enable: "on"
+              auth: "on"
+      responses:
+        '200':
+          description: Success
+tags:
+  - name: System
+    description: Power, standby, recording, freeze, digital zoom, HDMI/DVI mode, and factory resets.
+  - name: IR & OSD
+    description: Infrared remote receiver and the on-screen display menu.
+  - name: PTZ
+    description: 'Pan, tilt and zoom motion: relative jogs, absolute positioning, and speed limits.'
+  - name: Focus
+    description: Focus mode, autofocus sensitivity and zone, and absolute focus position.
+  - name: Presets
+    description: Save, recall, clear and speed-tune the 255 position presets.
+  - name: Image Color
+    description: White balance, RGB gain, colour temperature, saturation and hue.
+  - name: Image Exposure
+    description: Exposure mode, shutter, iris, gain, metering, backlight and anti-flicker.
+  - name: Image Picture
+    description: Luminance, contrast, sharpness, gamma and 3D noise reduction.
+  - name: Image Orientation
+    description: Horizontal and vertical image flip.
+  - name: Video Output
+    description: Hardware output state, output resolution, and the two encoder streams.
+  - name: AI Tracking
+    description: Auto-tracking enable, mode, presenter framing and zone configuration.
+  - name: Tally
+    description: Barrel tally light enable, state and colour.
+  - name: Streaming
+    description: RTMP(S), SRT, multicast and ONVIF publishing settings.
