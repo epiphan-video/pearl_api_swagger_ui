@@ -15,11 +15,28 @@ window.onload = function () {
     { name: "EC20", url: base + "/api/ec20/v1/openapi.yml" },
   ];
 
+  // Pick the initial product from the `?product=` query param (case-insensitive,
+  // e.g. ?product=EC20), falling back to the first registered product.
+  function specForProduct(name) {
+    if (!name) return null;
+    name = name.toLowerCase();
+    return specs.filter(function (s) { return s.name.toLowerCase() === name; })[0] || null;
+  }
+  var requested = new URLSearchParams(window.location.search).get('product');
+  var initialSpec = specForProduct(requested) || specs[0];
+
+  // Reflect the current product in the URL so the view is shareable/bookmarkable.
+  function setProductInUrl(name) {
+    var params = new URLSearchParams(window.location.search);
+    params.set('product', name);
+    window.history.replaceState(null, '', window.location.pathname + '?' + params.toString() + window.location.hash);
+  }
+
   window.ui = SwaggerUIBundle({
     // The custom topbar selector (below) drives spec switching via specActions,
-    // so we load the first product through `url` to guarantee it renders by
+    // so we load the initial product through `url` to guarantee it renders by
     // default — the native `urls` dropdown is not used (we override Topbar).
-    url: specs[0].url,
+    url: initialSpec.url,
     dom_id: '#swagger-ui',
     deepLinking: true,
     docExpansion: "none",
@@ -47,10 +64,13 @@ window.onload = function () {
                   ui.React.createElement('select', {
                     id: "product-select",
                     className: "product-selector__select",
+                    defaultValue: initialSpec.url,
                     onChange: function (e) {
                       var url = e.target.value;
+                      var name = specs.filter(function (s) { return s.url === url; }).map(function (s) { return s.name; })[0];
                       ui.specActions.updateUrl(url);
                       ui.specActions.download(url);
+                      if (name) setProductInUrl(name);
                     }
                   }, options)
                 )

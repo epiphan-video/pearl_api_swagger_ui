@@ -1,0 +1,6 @@
+# GitHub Pages (Jekyll) configuration.
+# Keep repo-only files out of the published site.
+exclude:
+  - README.md
+  - _config.yml
+  - .vscode
